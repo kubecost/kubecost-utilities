@@ -6,9 +6,9 @@ Usage:
 With your kubectl connected to the cluster whose data you want to back up:
 
 ```
-git clone https://github.com/kubecost/etl-backup.git
+git clone https://github.com/kubecost/kubecost-utilities.git
 
-cd etl-backup
+cd kubecost-utilities/etl-backup
 
 ./download-etl.sh <kubecost-namespace>
 ```
