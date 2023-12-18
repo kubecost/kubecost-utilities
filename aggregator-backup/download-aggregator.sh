@@ -3,20 +3,21 @@
 # This script will use kubectl to copy the aggregator data files to a temporary
 # location, then tar the contents and remove the temp directory
 
+set -eo pipefail
+
 # Temporary Directory Name
 tmpDir=kc-aggregator-tmp
 
-# Accept Optional Namespace -- default to kubecost
-namespace=$1
-if [ "$namespace" == "" ]; then
-    namespace=kubecost
+if [ -d "${tmpDir}" ]; then
+    echo "Temp dir '${tmpDir}' already exists. Please manually remove it before running this script."
+    exit 1
 fi
 
+# Accept Optional Namespace -- default to kubecost
+namespace="${1:-kubecost}"
+
 # Accept Optional duckdb Storage Directory -- default to /var/configs/waterfowl/duckdb
-aggDir=$2
-if [ "$aggDir" == "" ]; then
-    aggDir=/var/configs/waterfowl/duckdb
-fi
+aggDir="${2:-/var/configs/waterfowl/duckdb}"
 
 # Grab the Current Context for Prompt
 currentContext=`kubectl config current-context`
@@ -41,7 +42,7 @@ podName=`kubectl get pods -n $namespace -l app=aggregator -o jsonpath='{.items[0
 
 # Download file from container and store it in the same filename in current directory
 echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
-kubectl cp $namespace/$podName:$aggDir/ ./$tmpDir/
+kubectl cp -c aggregator $namespace/$podName:$aggDir/ ./$tmpDir/
 
 # Archive the directory
 tar cfz kubecost-aggregator.tar.gz $tmpDir
