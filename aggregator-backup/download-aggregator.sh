@@ -38,7 +38,7 @@ fi
 # If you use zsh and this line isn't working, it is likely due to your partial line response
 # and zsh adds a % delimeter to the end. Add the following line to your ~/.zshrc file:
 # PROMPT_EOL_MARK=''
-podName=`kubectl get pods -n $namespace -l app=aggregator -o jsonpath='{.items[0].metadata.name}'`
+podName="$(kubectl get pods -n $namespace -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
 
 # Download file from container and store it in the same filename in current directory
 echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
