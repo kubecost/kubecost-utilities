@@ -39,7 +39,7 @@ else
 fi
 
 # Grab the Current Context for Prompt
-currentContext=`kubectl config current-context`
+currentContext="$(kubectl config current-context)"
 ro=0
 derive=0
 copy=0
