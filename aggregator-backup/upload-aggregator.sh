@@ -4,6 +4,8 @@
 # into the aggregator container and then restart the container.
 # 
 
+set -eo pipefail
+
 # Temporary Directory Name
 tmpDir=kc-aggregator-tmp
 
