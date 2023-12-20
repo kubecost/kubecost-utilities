@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This script will use kubectl to copy the aggregator backup directory 
 # into the aggregator container and then restart the container.
