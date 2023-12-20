@@ -147,6 +147,8 @@ kubectl exec -n $namespace pod/$podName -- ash -c " \
 if [ $ro -eq 1 ]; then
 # Set Environment Variable for DB_READ_ONLY so that we don't go through
 # derivation on the write db, and the read db persists.
+echo "  Setting environment variable on deployment/$deployName DB_READ_ONLY=true"
+echo "  WARNING: This environment variable will not persist a helm value change."
 kubectl set env deployment/$deployName DB_READ_ONLY=true
 fi
 
