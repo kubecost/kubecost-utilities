@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This script will use kubectl to copy the aggregator data files to a temporary
 # location, then tar the contents and remove the temp directory
