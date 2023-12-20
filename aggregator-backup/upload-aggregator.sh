@@ -105,8 +105,8 @@ if [ $derive -eq 1 ]; then
   for i in $(ls -d */);
   do 
     if [[ $i = v* ]]; then
-      readFile=`ls $i | grep "read"`
-      writeFile=`ls $i | grep "write"`
+      readFile="$(ls $i | grep 'read')"
+      writeFile="$(ls $i | grep 'write')"
       echo "  Replacing $i/$writeFile with $i/$readFile"
       rm -rf $i/$writeFile
       cp $i/$readFile $i/$writeFile
