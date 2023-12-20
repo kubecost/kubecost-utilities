@@ -20,7 +20,7 @@ namespace="${1:-kubecost}"
 aggDir="${2:-/var/configs/waterfowl/duckdb}"
 
 # Grab the Current Context for Prompt
-currentContext=`kubectl config current-context`
+currentContext="$(kubectl config current-context)"
 
 echo "This script will downlaod the Aggregator Read DB using the following:"
 echo "  Kubectl Context: $currentContext"
