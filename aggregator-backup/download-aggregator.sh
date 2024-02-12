@@ -26,10 +26,10 @@ echo "This script will downlaod the Aggregator Read DB using the following:"
 echo "  Kubectl Context: $currentContext"
 echo "  Namespace: $namespace"
 echo "  Kubecost Aggregator Directory: $aggDir"
-echo -n "Would you like to continue [Y/n]? "
+echo -n "Would you like to continue [y/N]? "
 read r
 
-if [ "$r" == "${r#[Y]}" ]; then
+if [ "$r" == "${r#[y]}" ]; then
   echo "Exiting..."
   exit 0
 fi

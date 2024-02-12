@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# This script will use kubectl to copy the aggregator backup directory 
+# This script will use kubectl to copy the aggregator backup directory
 # into the aggregator container and then restart the container.
-# 
+#
 
 set -eo pipefail
 
@@ -63,7 +63,7 @@ if [ "$o" == "3" ]; then
   copy=1
 fi
 
-if [ $ro -eq 0 -a $derive -eq 0 -a $copy -eq 0 ]; then 
+if [ $ro -eq 0 -a $derive -eq 0 -a $copy -eq 0 ]; then
   echo "  Must select option 1/2/3 to continue. Please try again."
   exit 1
 fi
@@ -86,10 +86,10 @@ if [ $copy -eq 1 ]; then
   echo "  Mode: Copy file as is..."
 fi
 
-echo -n "Would you like to continue [Y/n]? "
+echo -n "Would you like to continue [y/N]? "
 read r
 
-if [ "$r" == "${r#[Y]}" ]; then
+if [ "$r" == "${r#[y]}" ]; then
   echo "Exiting..."
   exit 0
 fi
@@ -105,7 +105,7 @@ if [ $derive -eq 1 ]; then
   rm -rf $writeFile
   cp $readFile $writeFile
   for i in $(ls -d */);
-  do 
+  do
     if [[ $i = v* ]]; then
       readFile="$(ls $i | grep 'read')"
       writeFile="$(ls $i | grep 'write')"
