@@ -1,5 +1,5 @@
 # aggregator-backup
-Back up Kubecost's aggregator data to your local filesystem. Execs into the kubecost pod, tars the contents of the ETL files, and `kubectl cp`'s them down to your local machine.
+Back up Kubecost's Aggregator data to your local filesystem. Execs into the Aggregator Pod, `kubectl cp`s the important Aggregator data to your local machine, and builds a `.tar.gz` archive with that data.
 
 Usage: 
 
