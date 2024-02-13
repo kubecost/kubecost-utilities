@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# This script will use kubectl to copy the ETL backup directory to a temporary 
+# This script will use kubectl to copy the ETL backup directory to a temporary
 # location, then tar the contents and remove the tmp directory.
-# 
+#
 
 # Accept Optional Namespace -- default to kubecost
 namespace=$1
@@ -30,10 +30,10 @@ echo "  Kubectl Context: $currentContext"
 echo "  Namespace: $namespace"
 echo "  ETL File (source): $etlFile"
 echo "  ETL Directory (destination): $etlDir"
-echo -n "Would you like to continue [Y/n]? "
+echo -n "Would you like to continue [y/N]? "
 read r
 
-if [ "$r" == "${r#[Y]}" ]; then
+if [ "$r" == "${r#[y]}" ]; then
   echo "Exiting..."
   exit 0
 fi

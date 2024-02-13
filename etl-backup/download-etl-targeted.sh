@@ -2,20 +2,20 @@
 #
 # This script is a modified version of download-etl.sh that allows you to query
 # only for ETL files that are older than a specified window.
-# 
+#
 # Note. Because script is meant to provide flexible/customizable download
 # options, it is not yet compatible with upload-etl.sh
-# 
+#
 # Usage:
 #   $ ./download-etl-targeted.sh [namespace] [etlDir] [window]
-# 
+#
 # Examples:
 #   # Download the last 10 days of all your ETL files (this is the default)
 #   $ ./download-etl-targeted.sh
-# 
+#
 #   # Download the last 10 days of your daily Asset ETL files
 #   $ ./download-etl-targeted.sh kubecost /var/configs/db/etl/bingen/assets/1d
-# 
+#
 #   # Download the last 3 days of all your Allocation ETL files (replace with your own epoch timestamp)
 #   $ ./download-etl-targeted.sh kubecost /var/configs/db/etl/bingen/allocations 1693785266
 
@@ -51,10 +51,10 @@ echo "  Kubectl Context: $currentContext"
 echo "  Namespace: $namespace"
 echo "  ETL Directory: $etlDir"
 echo "  Window: $window"
-echo -n "Would you like to continue [Y/n]? "
+echo -n "Would you like to continue [y/N]? "
 read r
 
-if [ "$r" == "${r#[Y]}" ]; then
+if [ "$r" == "${r#[y]}" ]; then
   echo "Exiting..."
   exit 0
 fi

@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# This script will use kubectl to copy the ETL backup directory to a temporary 
+# This script will use kubectl to copy the ETL backup directory to a temporary
 # location, then tar the contents and remove the tmp directory.
-# 
+#
 
 # Temporary Dir Name
 tmpDir=kc-etl-tmp
@@ -26,10 +26,10 @@ echo "This script will download the Kubecost ETL storage using the following:"
 echo "  Kubectl Context: $currentContext"
 echo "  Namespace: $namespace"
 echo "  ETL Directory: $etlDir"
-echo -n "Would you like to continue [Y/n]? "
+echo -n "Would you like to continue [y/N]? "
 read r
 
-if [ "$r" == "${r#[Y]}" ]; then
+if [ "$r" == "${r#[y]}" ]; then
   echo "Exiting..."
   exit 0
 fi
@@ -45,7 +45,7 @@ podName=`kubectl get pods -n $namespace -l app=cost-analyzer -o jsonpath='{.item
 echo "Copying ETL Files from $namespace/$podName:$etlDir to $tmpDir..."
 kubectl cp -c cost-model $namespace/$podName:$etlDir $tmpDir
 
-# Archive the directory 
+# Archive the directory
 tar cfz kubecost-etl.tar.gz $tmpDir
 
 # Delete the temporary directory
