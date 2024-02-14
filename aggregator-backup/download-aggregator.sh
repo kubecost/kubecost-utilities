@@ -40,9 +40,13 @@ fi
 # PROMPT_EOL_MARK=''
 podName="$(kubectl get pods -n $namespace -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
 
+# find read db file
+readDbFile="$(kubectl exec -c aggregator $podName -n $namespace -- find /var/configs/waterfowl -type f -name '*.read')"
+echo "Found read db file: $readDbFile"
+
 # Download file from container and store it in the same filename in current directory
 echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
-kubectl cp -c aggregator $namespace/$podName:$aggDir/ ./$tmpDir/
+kubectl cp -c aggregator $namespace/$podName:$readDbFile ./$tmpDir/$podName.read
 
 # Archive the directory
 tar cfz kubecost-aggregator.tar.gz $tmpDir
