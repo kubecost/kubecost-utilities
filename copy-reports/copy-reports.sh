@@ -1,4 +1,28 @@
 #!/bin/bash
+set -ex
+set -euo pipefail
+
+# Prompt user for namespace and validate
+read -p "Enter the namespace for your kubecost deployment: " NAMESPACE
+
+if [ -z "$NAMESPACE" ]; then
+    echo "Namespace cannot be empty. Exiting."
+    exit 1
+fi
+
+# Check if the provided namespace exists
+if ! kubectl get namespace "$NAMESPACE" &>/dev/null; then
+    echo "Namespace '$NAMESPACE' does not exist. Exiting."
+    exit 1
+fi
+
+# Check if aggregator is deployed as a statefulset
+if helm get values kubecost -n $NAMESPACE | grep -q "deployMethod: statefulset"; then
+    echo "Aggregator is deployed as a statefulset"
+else
+    echo "Aggregator is not deployed as a statefulset"
+    exit 1
+fi
 
 OLD_POD=$(kubectl get pod -n kubecost -l app=cost-analyzer -o jsonpath='{.items[0].metadata.name}')
 NEW_POD=$(kubectl get pod -n kubecost -l app=aggregator -o jsonpath='{.items[0].metadata.name}')
@@ -10,14 +34,10 @@ FILES=(
     "asset-reports.json"
     "cloud-cost-reports.json"
     "reports.json"
-    "alerts/alerts.json"
 )
 
 for FILE in "${FILES[@]}"; do
     echo "Copying file: $FILE"
-
-    # Check the file in the old reports
-    kubectl exec -it -n kubecost $OLD_POD -c cost-model -- ls -lh "$SOURCE_DIR/$FILE"
 
     # Download the file from the old reports
     kubectl cp kubecost/$OLD_POD:"$SOURCE_DIR/$FILE" /tmp/"$FILE" -c cost-model
@@ -31,4 +51,11 @@ for FILE in "${FILES[@]}"; do
     echo "Done!"
     echo
 done
+
+# Clean up specific files in /tmp directory
+for FILE in "${FILES[@]}"; do
+    rm -f /tmp/"$FILE"
+done
+
+echo "Temporary files in /tmp directory cleaned up."
 
