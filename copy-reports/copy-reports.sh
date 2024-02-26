@@ -1,6 +1,5 @@
 #!/bin/bash
-set -ex
-set -euo pipefail
+set -euxo pipefail
 
 # Prompt user for namespace and validate
 read -p "Enter the namespace for your kubecost deployment: " NAMESPACE
