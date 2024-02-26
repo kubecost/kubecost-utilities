@@ -16,10 +16,10 @@ if ! kubectl get namespace "$NAMESPACE" &>/dev/null; then
 fi
 
 # Check if aggregator is deployed as a statefulset
-if helm get values kubecost -n $NAMESPACE | grep -q "deployMethod: statefulset"; then
-    echo "Aggregator is deployed as a statefulset"
+if kubectl -n "$NAMESPACE" get sts -l app=aggregator &> /dev/null; then
+    echo "Aggregator StatefulSet with label 'app=aggregator' found in namespace $NAMESPACE"
 else
-    echo "Aggregator is not deployed as a statefulset"
+    echo "Aggregator StatefulSet with label 'app=aggregator' not found in namespace $NAMESPACE"
     exit 1
 fi
 
