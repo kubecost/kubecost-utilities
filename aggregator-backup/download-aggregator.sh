@@ -27,7 +27,7 @@ echo "  Kubectl Context: $currentContext"
 echo "  Namespace: $namespace"
 echo "  Kubecost Aggregator Directory: $aggDir"
 echo -n "Would you like to continue [y/N]? "
-read r
+read -r r
 
 if [ "$r" == "${r#[y]}" ]; then
   echo "Exiting..."
@@ -38,19 +38,20 @@ fi
 # If you use zsh and this line isn't working, it is likely due to your partial line response
 # and zsh adds a % delimeter to the end. Add the following line to your ~/.zshrc file:
 # PROMPT_EOL_MARK=''
-podName="$(kubectl get pods -n $namespace -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
+podName="$(kubectl get pods -n "$namespace" -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
 
 # find read db file
-readDbFile="$(kubectl exec -c aggregator $podName -n $namespace -- find /var/configs/waterfowl -type f -name '*.read')"
+readDbFile="$(kubectl exec -c aggregator "$podName" -n "$namespace" -- find /var/configs/waterfowl -type f -name '*.read')"
 echo "Found read db file: $readDbFile"
 
 # Download file from container and store it in the same filename in current directory
 echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
-kubectl cp -c aggregator $namespace/$podName:$readDbFile ./$tmpDir/$podName.read
+kubectl cp -c aggregator "$namespace"/"$podName":"$readDbFile" ./$tmpDir/"$podName".read
 
 # Archive the directory
-tar cfz kubecost-aggregator.tar.gz $tmpDir
-
+tar cfz kubecost-aggregator.tar.gz $tmpDir && \
+  echo "Archive created successfully" || \
+  echo "Failed to create archive\nNote: if you have an error like: Cannot stat: No such file or directory\nYou will need to run the script again because the Read-DB changed while running the script."
 # Delete the temporary directory
 rm -rf $tmpDir
 
