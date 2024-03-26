@@ -41,12 +41,22 @@ fi
 podName="$(kubectl get pods -n $namespace -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
 
 # find read db file
-readDbFile="$(kubectl exec -c aggregator $podName -n $namespace -- find /var/configs/waterfowl -type f -name '*.read')"
+readDbFile="$(kubectl exec -c aggregator $podName -n $namespace -- find /var/configs/waterfowl/duckdb/v0_9_2 -type f -name '*.read')"
 echo "Found read db file: $readDbFile"
 
 # Download file from container and store it in the same filename in current directory
+
+for filename in $readDbFile; do
+  if [[ $filename == *"snapshot"* ]]; then
+    echo "skipping snapshot"
+  else
+    echo "Copying aggregator Files from $namespace/$podName:$filename to $tmpDir..."
+    kubectl cp -c aggregator $namespace/$podName:$filename ./$tmpDir/$podName.read
+  fi
+done
+
 echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
-kubectl cp -c aggregator $namespace/$podName:$readDbFile ./$tmpDir/$podName.read
+echo "kubectl cp -c aggregator $namespace/$podName:$readDbFile ./$tmpDir/$podName.read"
 
 # Archive the directory
 tar cfz kubecost-aggregator.tar.gz $tmpDir
