@@ -17,7 +17,7 @@ fi
 namespace="${1:-kubecost}"
 
 # Accept Optional duckdb Storage Directory -- default to /var/configs/waterfowl/duckdb
-aggDir="${2:-/var/configs/waterfowl/duckdb}"
+aggDir="${2:-/var/configs/waterfowl/duckdb/v0_9_2}"
 
 # Grab the Current Context for Prompt
 currentContext="$(kubectl config current-context)"
@@ -34,11 +34,24 @@ if [ "$r" == "${r#[y]}" ]; then
   exit 0
 fi
 
-# Grab the Pod Name of the aggregator pod
+# Grab the Pod Name of the aggregator pod or cost-anazlyer pod if not deployed as a statefulset
 # If you use zsh and this line isn't working, it is likely due to your partial line response
 # and zsh adds a % delimeter to the end. Add the following line to your ~/.zshrc file:
 # PROMPT_EOL_MARK=''
-podName="$(kubectl get pods -n $namespace -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
+# Check if a pod with label "app=aggregator" exists in the namespace
+if podName="$(kubectl get pods -n "$namespace" -l app=aggregator -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)"; then
+    echo "Found pod with label 'app=aggregator': $podName"
+else
+    echo "No pod with label 'app=aggregator' found. Looking for the specific pod..."
+    # Look for cost-analyzer pod
+    podName="$(kubectl get pods -n kubecost -l app=cost-analyzer -o jsonpath='{.items[0].metadata.name}')"
+    if [ -n "$podName" ]; then
+        echo "Found specific pod: $podName"
+    else
+        echo "Specific pod not found."
+        # Handle the case when neither pod is found
+    fi
+fi
 
 # find read db file
 readDbFile="$(kubectl exec -c aggregator $podName -n $namespace -- find /var/configs/waterfowl -type f -name '*.read')"
