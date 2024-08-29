@@ -1,8 +1,14 @@
 #!/bin/bash
-set -euxo pipefail
+set -euo pipefail
 
-# Prompt user for namespace and validate
-read -p "Enter the namespace for your kubecost deployment: " NAMESPACE
+# Check if namespace argument is provided
+if [ $# -eq 0 ]; then
+    echo "Error: Namespace argument is required."
+    echo "Usage: $0 <namespace>"
+    exit 1
+fi
+
+NAMESPACE=$1
 
 if [ -z "$NAMESPACE" ]; then
     echo "Namespace cannot be empty. Exiting."
@@ -57,9 +63,9 @@ output=$(kubectl exec -it -n "$NAMESPACE" $NEW_POD -c aggregator -- ls -lh "$TAR
 line_count=$(echo "$output" | wc -l)
 
 if [ "$line_count" -eq 1 ]; then
-    echo "File successfully copied and verified:"
+    echo "File successfully copied and verified"
 else
-    echo "Failed to copy"
+    echo "Failed to copy, could not find the ${NEWFILENAME} in aggregator"
     exit 1
 fi
 
