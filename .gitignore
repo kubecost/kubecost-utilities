@@ -1,3 +1,5 @@
 *.gz
 .DS_Store
 kc-aggregator-tmp/
+temp/
+*.json
