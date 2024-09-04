@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
-# This script will use kubectl to copy the aggregator data files to a temporary
-# location, then tar the contents and remove the temp directory
+# This script will use kubectl to copy the aggregator data files using an ephemeral container
 
 set -eo pipefail
 
@@ -35,18 +34,26 @@ if [ "$r" == "${r#[y]}" ]; then
 fi
 
 # Grab the Pod Name of the aggregator pod
-# If you use zsh and this line isn't working, it is likely due to your partial line response
-# and zsh adds a % delimeter to the end. Add the following line to your ~/.zshrc file:
-# PROMPT_EOL_MARK=''
 podName="$(kubectl get pods -n "$namespace" -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
 
-# find read db file
-readDbFile="$(kubectl exec -c aggregator "$podName" -n "$namespace" -- find /var/configs/waterfowl -type f -name '*.read')"
-echo "Found read db file: $readDbFile"
+# Use ephemeral container to access and copy the read DB file
+echo "Accessing aggregator filesystem using ephemeral container..."
+kubectl debug -n "$namespace" "$podName" -it --image=busybox --target=aggregator --share-processes -- /bin/sh -c "
+  cd /proc/1/root${aggDir}
+  readDbFile=\$(find . -type f -name '*.read')
+  if [ -z \"\$readDbFile\" ]; then
+    echo 'Read DB file not found'
+    exit 1
+  fi
+  echo \"Found read db file: \$readDbFile\"
+  mkdir -p /tmp/$tmpDir
+  cp \"\$readDbFile\" /tmp/$tmpDir/
+  echo 'File copied to ephemeral container'
+" || { echo "Failed to access or copy file from ephemeral container"; exit 1; }
 
-# Download file from container and store it in the same filename in current directory
-echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
-kubectl cp -c aggregator "$namespace"/"$podName":"$readDbFile" ./$tmpDir/"$podName".read
+# Copy file from ephemeral container to local machine
+echo "Copying file from ephemeral container to local machine..."
+kubectl cp -n "$namespace" "$podName":/tmp/$tmpDir ./$tmpDir
 
 # Archive the directory
 tar cfz kubecost-aggregator.tar.gz $tmpDir && \
