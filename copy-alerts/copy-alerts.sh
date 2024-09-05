@@ -52,11 +52,13 @@ TARGET_DIR="/var/configs"
 # IN cost-model the alerts are stored as alerts.json and in aggregator alerts are stored as alerts-aggregator.json
 OLDFILENAME="alerts/alerts.json"
 NEWFILENAME="alerts/alerts-aggregator.json"
+TEMP_FILE="/tmp/$NEWFILENAME"
 
-kubectl cp -n "$NAMESPACE" $OLD_POD:"$SOURCE_DIR/$OLDFILENAME" /tmp/"$NEWFILENAME" -c cost-model
+# Copy the content of the old file to the temporary file
+kubectl exec -n "$NAMESPACE" $OLD_POD -c cost-model -- cat "$SOURCE_DIR/$OLDFILENAME" > "$TEMP_FILE"
 
-# Upload the file to the new reports location in Aggregator
-kubectl cp -n "$NAMESPACE" /tmp/"$NEWFILENAME" $NEW_POD:"$TARGET_DIR/$NEWFILENAME" -c aggregator
+# Copy the content from the temporary file to the new file in the aggregator
+cat "$TEMP_FILE" | kubectl exec -i -n "$NAMESPACE" $NEW_POD -c aggregator -- sh -c "cat > $TARGET_DIR/$NEWFILENAME"
 
 # Check the file is transitioned
 output=$(kubectl exec -it -n "$NAMESPACE" $NEW_POD -c aggregator -- ls -lh "$TARGET_DIR/$NEWFILENAME")
@@ -69,7 +71,7 @@ else
     exit 1
 fi
 
-rm -f /tmp/"$NEWFILENAME"
+rm -f "$TEMP_FILE"
 
 # Empty the old alerts file in cost-model
 # NOTE: Health alerts need to be enabled again on UI to get alerts from cost-model
