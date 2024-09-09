@@ -1,17 +1,8 @@
 #!/usr/bin/env bash
 #
-# This script will use kubectl to copy the aggregator data files to a temporary
-# location, then tar the contents and remove the temp directory
+# This script finds the latest aggregator read file and downloads it directly without using tar
 
-set -eo pipefail
-
-# Temporary Directory Name
-tmpDir=kc-aggregator-tmp
-
-if [ -d "${tmpDir}" ]; then
-    echo "Temp dir '${tmpDir}' already exists. Please manually remove it before running this script."
-    exit 1
-fi
+set -euo pipefail
 
 # Accept Optional Namespace -- default to kubecost
 namespace="${1:-kubecost}"
@@ -22,7 +13,7 @@ aggDir="${2:-/var/configs/waterfowl/duckdb}"
 # Grab the Current Context for Prompt
 currentContext="$(kubectl config current-context)"
 
-echo "This script will downlaod the Aggregator Read DB using the following:"
+echo "This script will download the Aggregator Read DB using the following:"
 echo "  Kubectl Context: $currentContext"
 echo "  Namespace: $namespace"
 echo "  Kubecost Aggregator Directory: $aggDir"
@@ -34,27 +25,36 @@ if [ "$r" == "${r#[y]}" ]; then
   exit 0
 fi
 
-# Grab the Pod Name of the aggregator pod
-# If you use zsh and this line isn't working, it is likely due to your partial line response
-# and zsh adds a % delimeter to the end. Add the following line to your ~/.zshrc file:
-# PROMPT_EOL_MARK=''
-podName="$(kubectl get pods -n "$namespace" -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
+# Find the aggregator pod
+podName=$(kubectl get pod -n "$namespace" -l app=aggregator -o jsonpath='{.items[0].metadata.name}')
 
-# find read db file
-readDbFile="$(kubectl exec -c aggregator "$podName" -n "$namespace" -- find /var/configs/waterfowl -type f -name '*.read')"
-echo "Found read db file: $readDbFile"
+if [ -z "$podName" ]; then
+    echo "No aggregator pod found in namespace $namespace"
+    exit 1
+fi
 
-# Download file from container and store it in the same filename in current directory
-echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
-kubectl cp -c aggregator "$namespace"/"$podName":"$readDbFile" ./$tmpDir/"$podName".read
+echo "Found aggregator pod: $podName"
 
-# Archive the directory
-tar cfz kubecost-aggregator.tar.gz $tmpDir && \
-  echo "Archive created successfully" || \
-  echo "Failed to create archive\nNote: if you have an error like: Cannot stat: No such file or directory\nYou will need to run the script again because the Read-DB changed while running the script."
-# Delete the temporary directory
-rm -rf $tmpDir
+# Find the latest .read file and download it
+echo "Finding latest .read file and downloading..."
+kubectl exec -it $podName -n $namespace -c aggregator -- /bin/sh <<EOF
+set -e
+latest_read_file=\$(ls -t $aggDir/v*/*.read | head -n 1)
+echo "Latest .read file: \$latest_read_file"
+if [ -f "\$latest_read_file" ]; then
+    base64 "\$latest_read_file"
+else
+    echo "File not found: \$latest_read_file" >&2
+    exit 1
+fi
+EOF
+) | base64 -d > "kubecost-latest.duckdb.read"
 
-# Log final messages
-echo "DB Archive Created kubecost-aggregator.tar.gz"
+if [ $? -eq 0 ]; then
+    echo "File kubecost-latest.duckdb.read downloaded successfully."
+else
+    echo "Error occurred while downloading the file."
+    exit 1
+fi
+
 echo "Done"
