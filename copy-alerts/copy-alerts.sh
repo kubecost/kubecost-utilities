@@ -46,16 +46,19 @@ if [ -z "$OLD_POD" ] || [ -z "$NEW_POD" ]; then
     exit 1
 fi
 
-SOURCE_DIR="/var/configs"
-TARGET_DIR="/var/configs"
+SOURCE_DIR="/var/configs/alerts"
+TARGET_DIR="/var/configs/alerts"
 
-# IN cost-model the alerts are stored as alerts.json and in aggregator alerts are stored as alerts-aggregator.json
-OLDFILENAME="alerts/alerts.json"
-NEWFILENAME="alerts/alerts-aggregator.json"
+# In cost-model the alerts are stored as alerts.json and in aggregator alerts are stored as alerts-aggregator.json
+OLDFILENAME="/alerts.json"
+NEWFILENAME="/alerts-aggregator.json"
 TEMP_FILE="/tmp/$NEWFILENAME"
 
 # Copy the content of the old file to the temporary file
 kubectl exec -n "$NAMESPACE" $OLD_POD -c cost-model -- cat "$SOURCE_DIR/$OLDFILENAME" > "$TEMP_FILE"
+
+# Ensure the target directory exists in aggregator container
+kubectl exec -i -n "$NAMESPACE" $NEW_POD -c aggregator -- sh -c "mkdir -p $TARGET_DIR"
 
 # Copy the content from the temporary file to the new file in the aggregator
 cat "$TEMP_FILE" | kubectl exec -i -n "$NAMESPACE" $NEW_POD -c aggregator -- sh -c "cat > $TARGET_DIR/$NEWFILENAME"
