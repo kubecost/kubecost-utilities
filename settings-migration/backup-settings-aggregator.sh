@@ -30,6 +30,7 @@ kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/se
 kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/teams.json $OUTPUT_DIR/teams.json
 kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/users.json $OUTPUT_DIR/users.json
 kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/alerts/alerts.json $OUTPUT_DIR/alerts.json
+kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/alerts/alerts-aggregator.json $OUTPUT_DIR/alerts-aggregator.json
 
 # Remove empty configs
 find $OUTPUT_DIR -type f -size -65c -delete
