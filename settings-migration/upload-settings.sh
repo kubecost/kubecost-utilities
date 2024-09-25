@@ -13,7 +13,7 @@ kubecost_aggregator=$(kubectl get pod -n $NAMESPACE -l app=aggregator -o jsonpat
 for file in $OUTPUT_DIR/*; do
   if [ -f $file ]; then
     echo "Uploading $file"
-    cat "$file" | kubectl exec -i -n "$NAMESPACE" $kubecost_aggregator -c aggregator -- sh -c "cat > /var/configs/$file"
+    cat "$file" | kubectl exec -i -n "$NAMESPACE" $kubecost_aggregator -c aggregator -- sh -c "cat > /var/configs/$(basename "$file")"
     echo "Uploaded $file"
   fi
 done

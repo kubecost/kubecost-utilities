@@ -8,7 +8,7 @@ This script will backup and upload settings from one Aggregator to another.
 - [backup-settings-aggregator.sh](backup-settings-aggregator.sh): This script automates the migration of specific configuration files from the old Aggregator to a folder on this machine.
 - [upload-settings.sh](upload-settings.sh): This script uploads all config files from a folder on this machine to the new Aggregator.
 
-## Usage
+## Usage example
 
 1. Backup the settings from the old Aggregator
 
