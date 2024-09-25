@@ -47,7 +47,7 @@ echo "Latest .read file: $LATEST_READ_FILE"
 # Execute the query
 echo "Executing query: $QUERY"
 RESULT=$(kubectl exec -n "$NAMESPACE" $POD_NAME -c aggregator -- \
-    duckdb -readonly "$LATEST_READ_FILE" -csv -c "$QUERY")
+    duckdb --readonly "$LATEST_READ_FILE" -csv -c "$QUERY")
 
 echo "Query result:"
 echo "$RESULT"
