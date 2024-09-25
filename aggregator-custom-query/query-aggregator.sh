@@ -1,15 +1,42 @@
 #!/bin/bash
 set -euo pipefail
 
-# Check if namespace and query arguments are provided
+# Function to print usage
+print_usage() {
+    echo "Usage: $0 <namespace> <query> [--file <filename>]"
+    echo "  <namespace>: The Kubernetes namespace"
+    echo "  <query>: The SQL query (in quotes) or --file option"
+    echo "  --file <filename>: Optional. Path to a file containing the SQL query"
+}
+
+# Check if at least two arguments are provided
 if [ $# -lt 2 ]; then
     echo "Error: Namespace and query arguments are required."
-    echo "Usage: $0 <namespace> <query>"
+    print_usage
     exit 1
 fi
 
 NAMESPACE=$1
-QUERY=$2
+shift
+
+# Initialize query variable
+QUERY=""
+
+# Parse arguments
+if [ "$1" == "--file" ]; then
+    if [ -z "$2" ]; then
+        echo "Error: File path is missing after --file option."
+        print_usage
+        exit 1
+    fi
+    if [ ! -f "$2" ]; then
+        echo "Error: File '$2' not found."
+        exit 1
+    fi
+    QUERY=$(cat "$2")
+else
+    QUERY="$1"
+fi
 
 if [ -z "$NAMESPACE" ]; then
     echo "Namespace cannot be empty. Exiting."
@@ -45,7 +72,7 @@ LATEST_READ_FILE=$(kubectl exec -n "$NAMESPACE" $POD_NAME -c aggregator -- \
 echo "Latest .read file: $LATEST_READ_FILE"
 
 # Execute the query
-echo "Executing query: $QUERY"
+#echo "Executing query: $QUERY"
 RESULT=$(kubectl exec -n "$NAMESPACE" $POD_NAME -c aggregator -- \
     duckdb --readonly "$LATEST_READ_FILE" -csv -c "$QUERY")
 
