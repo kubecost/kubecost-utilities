@@ -2,6 +2,7 @@
 
 if [ -z "$2" ]; then
   echo "Usage: $0 <namespace> <folder with settings to upload>"
+  echo "Example: $0 kubecost ./kubecost-backup"
   exit 1
 fi
 
@@ -12,8 +13,8 @@ kubecost_aggregator=$(kubectl get pod -n $NAMESPACE -l app=aggregator -o jsonpat
 
 for file in $OUTPUT_DIR/*; do
   if [ -f $file ]; then
-    echo "Uploading $file"
+    echo "Uploading $(basename "$file")"
     cat "$file" | kubectl exec -i -n "$NAMESPACE" $kubecost_aggregator -c aggregator -- sh -c "cat > /var/configs/$(basename "$file")"
-    echo "Uploaded $file"
+    echo "Uploaded $(basename "$file")"
   fi
 done

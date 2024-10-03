@@ -10,30 +10,23 @@ else
    NAMESPACE=$1
 fi
 
-kubecost_cost_analyzer=$(kubectl get pod -n $NAMESPACE -l app=aggregator -o jsonpath='{.items[0].metadata.name}')
+AGGREGATOR_POD=$(kubectl get pod -n $NAMESPACE -l app=aggregator -o jsonpath='{.items[0].metadata.name}')
 mkdir -p $NAMESPACE-backup
 OUTPUT_DIR=$NAMESPACE-backup
 
-echo "Expect some failures as not all files may be present"
+FILES_TO_COPY=$(kubectl exec -n $NAMESPACE -c aggregator ${AGGREGATOR_POD} -- ls -1 /var/configs/)
 
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/advanced-reports.json $OUTPUT_DIR/advanced-reports.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/apiconfig.json $OUTPUT_DIR/apiconfig.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/asset-reports.json $OUTPUT_DIR/asset-reports.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/budgets.json $OUTPUT_DIR/budgets.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/cloud-configurations.json $OUTPUT_DIR/cloud-configurations.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/cloud-cost-reports.json $OUTPUT_DIR/cloud-cost-reports.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/collections.json $OUTPUT_DIR/collections.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/group-reports.json $OUTPUT_DIR/group-reports.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/recurring-budget-rules.json $OUTPUT_DIR/recurring-budget-rules.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/reports.json $OUTPUT_DIR/reports.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/serviceAccounts.json $OUTPUT_DIR/serviceAccounts.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/teams.json $OUTPUT_DIR/teams.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/users.json $OUTPUT_DIR/users.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/alerts/alerts.json $OUTPUT_DIR/alerts.json
-kubectl cp -n $NAMESPACE -c aggregator ${kubecost_cost_analyzer}:/var/configs/alerts/alerts-aggregator.json $OUTPUT_DIR/alerts-aggregator.json
+for file in $FILES_TO_COPY; do
+  if [[ $file == *.json ]]; then
+    kubectl exec -n $NAMESPACE -c aggregator ${AGGREGATOR_POD} -- cat /var/configs/$file > $OUTPUT_DIR/$file
+    echo "Copied $file"
+  else
+    continue
+  fi
+done
 
 # Remove empty configs
-find $OUTPUT_DIR -type f -size -65c -delete
+find $OUTPUT_DIR -type f -size -3c -delete
 
 echo "The following files were copied to $OUTPUT_DIR"
 ls -l $OUTPUT_DIR
