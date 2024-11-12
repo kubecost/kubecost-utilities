@@ -47,12 +47,12 @@ echo "Found deployment: $deploymentName"
 
 costModelImage=$(kubectl get deployment $deploymentName -n $namespace -o jsonpath='{.spec.template.spec.containers[?(@.name=="cost-model")].image}')
 
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","image":"busybox"}]}}}}' --type=strategic
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","command":["sleep"],"args":["infinity"]}]}}}}' --type=strategic
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"aggregator","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cloud-cost","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-analyzer-frontend","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic
+kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","image":"busybox"}]}}}}' --type=strategic -n $namespace
+kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","command":["sleep"],"args":["infinity"]}]}}}}' --type=strategic -n $namespace
+kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic -n $namespace
+kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"aggregator","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic -n $namespace
+kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cloud-cost","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic -n $namespace
+kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-analyzer-frontend","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic -n $namespace
 
 # Wait for the cost-analyzer deployment to be ready
 echo "Waiting for cost-analyzer deployment to be ready..."
@@ -84,7 +84,7 @@ tar cfz kubecost-etl.tar.gz $tmpDir
 rm -rf $tmpDir
 
 echo "Restoring cost-model image to $costModelImage"
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","image":"'$costModelImage'","command":null,"args":null}]}}}}' --type=strategic
+kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","image":"'$costModelImage'","command":null,"args":null}]}}}}' --type=strategic -n $namespace
 
 # Log final messages
 echo "ETL Archive Created: kubecost-etl.tar.gz"
