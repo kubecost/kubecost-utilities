@@ -46,12 +46,8 @@ echo "Found read db file: $readDbFile"
 
 # Download file from container and store it in the same filename in current directory
 echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
-kubectl cp -c aggregator "$namespace"/"$podName":"$readDbFile" ./$tmpDir/"$podName".read
+kubectl exec -c aggregator "$podName" -n "$namespace" -- bash -c "base64 $readDbFile" | base64 -d > "./$tmpDir/$podName.read"
 
-# Archive the directory
-tar cfz kubecost-aggregator.tar.gz $tmpDir && \
-  echo "Archive created successfully" || \
-  echo "Failed to create archive\nNote: if you have an error like: Cannot stat: No such file or directory\nYou will need to run the script again because the Read-DB changed while running the script."
 # Delete the temporary directory
 rm -rf $tmpDir
 
