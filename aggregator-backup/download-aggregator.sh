@@ -39,14 +39,19 @@ fi
 # and zsh adds a % delimeter to the end. Add the following line to your ~/.zshrc file:
 # PROMPT_EOL_MARK=''
 podName="$(kubectl get pods -n "$namespace" -l app=aggregator -o jsonpath='{.items[0].metadata.name}')"
+echo "Aggregator PodName: $podName"
 
-# find read db file
-readDbFile="$(kubectl exec -c aggregator "$podName" -n "$namespace" -- find /var/configs/waterfowl -type f -name '*.read')"
+# Find read DB file using ls and awk commands to get the absolute path
+readDbFile="$(kubectl exec -c aggregator "$podName" -n "$namespace" -- ls -Rlt /var/configs/waterfowl | awk '/:$/ {dir=substr($0, 1, length($0)-1)} /read/ && !/:$/ {print dir "/" $NF}' | head -n 1)"
 echo "Found read db file: $readDbFile"
 
 # Download file from container and store it in the same filename in current directory
-echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir..."
-kubectl exec -c aggregator "$podName" -n "$namespace" -- bash -c "base64 $readDbFile" | base64 -d > "./$tmpDir/$podName.read.b64"
+echo "Copying aggregator Files from $namespace/$podName:$aggDir to $tmpDir... creates $tmpDir if does not exist"
+
+# Create temporary directory if it doesn't exist
+mkdir -p "./$tmpDir"
+
+kubectl exec -c aggregator "$podName" -n "$namespace" -- bash -c "base64 $readDbFile" > "./$tmpDir/$podName.read.b64"
 
 # Then decode it locally
 base64 -d -i "./$tmpDir/$podName.read.b64" -o "./$tmpDir/$podName.read"
