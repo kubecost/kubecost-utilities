@@ -20,15 +20,19 @@ if [ "$etlDir" == "" ]; then
 fi
 
 # Grab the Current Context for Prompt
-currentContext=`kubectl config current-context`
-# Get the current cost-model image before patching
+currentContext=$(kubectl config current-context)
+
 # Find the deployment name with "cost-analyzer" in it
 deploymentName=$(kubectl get deployments -n $namespace -o jsonpath='{.items[?(@.metadata.name contains "cost-analyzer")].metadata.name}' | tr ' ' '\n' | grep cost-analyzer)
+if [ -z "$deploymentName" ]; then
+    echo "Error: No deployment found with 'cost-analyzer' in its name in namespace $namespace"
+    exit 1
+fi
 
 echo "This script will download the Kubecost ETL storage using the following:"
 echo "  Kubectl Context: $currentContext"
 echo "  Namespace: $namespace"
-echo "  Deployment: $deploymentName"
+echo "  Deployment: $deploymentName <-- PLEASE VERIFY THIS IS CORRECT"
 echo "  ETL Directory: $etlDir"
 echo -n "Would you like to continue [y/N]? "
 read r
@@ -38,26 +42,50 @@ if [ "$r" == "${r#[y]}" ]; then
   exit 0
 fi
 
-if [ -z "$deploymentName" ]; then
-    echo "Error: No deployment found with 'cost-analyzer' in its name in namespace $namespace"
-    exit 1
+# create a backup copy of the deployment
+if ! kubectl get deployment $deploymentName -n $namespace -o yaml > $deploymentName.yaml; then
+  echo "Failed to backup deployment configuration"
+  exit 1
 fi
 
-echo "Found deployment: $deploymentName"
+cat <<EOF | kubectl apply --namespace $namespace --force -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $deploymentName
+  namespace: $namespace
+  labels:
+    app: cost-analyzer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cost-analyzer
+  template:
+    metadata:
+      labels:
+        app: cost-analyzer
+    spec:
+      containers:
+      - name: busybox
+        image: busybox
+        command:
+        - sleep
+        args:
+        - infinity
+        volumeMounts:
+        - mountPath: /var/configs
+          name: persistent-configs
+      volumes:
+      - name: persistent-configs
+        persistentVolumeClaim:
+          claimName: kubecost-bottlerocket-cost-analyzer
+EOF
 
-costModelImage=$(kubectl get deployment $deploymentName -n $namespace -o jsonpath='{.spec.template.spec.containers[?(@.name=="cost-model")].image}')
-
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","image":"busybox"}]}}}}' --type=strategic -n $namespace
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","command":["sleep"],"args":["infinity"]}]}}}}' --type=strategic -n $namespace
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic -n $namespace
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"aggregator","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic -n $namespace
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cloud-cost","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic -n $namespace
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-analyzer-frontend","livenessProbe":null,"readinessProbe":null}]}}}}' --type=strategic -n $namespace
-
-# Wait for the cost-analyzer deployment to be ready
 echo "Waiting for cost-analyzer deployment to be ready..."
+# Wait for the deployment to be ready, with a 5 minute timeout
 kubectl rollout status deployment/$deploymentName -n $namespace --timeout=300s
-
+# Check if the previous command failed ($? contains the exit code)
 if [ $? -ne 0 ]; then
   echo "Error: Deployment did not become ready within 5 minutes"
   exit 1
@@ -65,43 +93,34 @@ fi
 
 echo "Cost-analyzer deployment is ready"
 
-
 # Create a temporary directory to write files
 echo "Creating temporary directory $tmpDir..."
 mkdir $tmpDir
 
 # Grab the Pod Name of the cost-analyzer pod
-podName=`kubectl get pods -n $namespace -l app=cost-analyzer -o jsonpath='{.items[0].metadata.name}'`
+podName=$(kubectl get pods -n $namespace -l app=cost-analyzer -o jsonpath='{.items[0].metadata.name}')
 
 # Copy the Files to tmp directory
 echo "Copying ETL Files from $namespace/$podName:$etlDir to $tmpDir..."
 echo "Getting file count and size from ETL directory..."
-kubectl exec -n $namespace $podName -c cost-model -- sh -c "echo 'File Count and Size:'; du -sh $etlDir; echo 'File Count:'; find $etlDir -type f | wc -l"
+kubectl exec -n $namespace $podName -c busybox -- sh -c "echo 'File Count and Size:'; du -sh $etlDir; echo 'File Count:'; find $etlDir -type f | wc -l"
 # Compress ETL directory on the pod first
 echo "Compressing ETL directory on the pod..."
-kubectl exec -n $namespace $podName -c cost-model -- tar czf /var/configs/etl.tar.gz $etlDir
+kubectl exec -n $namespace $podName -c busybox -- tar czf /var/configs/etl.tar.gz $etlDir
+
+# Show the size of the compressed file
+echo "Compressed ETL file size:"
+kubectl exec -n $namespace $podName -c busybox -- ls -lh /var/configs/etl.tar.gz
 
 # Copy the compressed file instead of the whole directory
 echo "Copying compressed ETL archive from pod..."
-kubectl cp -c cost-model $namespace/$podName:/var/configs/etl.tar.gz $tmpDir/etl.tar.gz
+kubectl cp -c busybox $namespace/$podName:/var/configs/etl.tar.gz $tmpDir/etl.tar.gz
 
 # Clean up the temporary file on the pod
-kubectl exec -n $namespace $podName -c cost-model -- rm /var/configs/etl.tar.gz
+kubectl exec -n $namespace $podName -c busybox -- rm /var/configs/etl.tar.gz
 
-# Extract the archive in the temp directory
-cd $tmpDir && tar xzf etl.tar.gz && rm etl.tar.gz
-cd - > /dev/null
-
-# kubectl cp -c cost-model $namespace/$podName:$etlDir $tmpDir
-
-# Archive the directory
-tar cfz kubecost-etl.tar.gz $tmpDir
-
-# Delete the temporary directory
-rm -rf $tmpDir
-
-echo "Restoring cost-model image to $costModelImage"
-kubectl patch deployment $deploymentName -p '{"spec":{"template":{"spec":{"containers":[{"name":"cost-model","image":"'$costModelImage'","command":null,"args":null}]}}}}' --type=strategic -n $namespace
+echo "Restoring cost-analyzer deployment to original configuration"
+kubectl apply --namespace $namespace --force -f $deploymentName.yaml
 
 # Log final messages
 echo "ETL Archive Created: kubecost-etl.tar.gz"
