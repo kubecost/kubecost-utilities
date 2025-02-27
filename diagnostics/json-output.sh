@@ -22,7 +22,7 @@ else
     exit 1
 fi
 
-latest_file=$(kubectl exec -it "$pod" -c aggregator -n "$namespace" -- ls -1t /var/configs/db/etl/bingen/allocations/1d/ |head -n1 )
+latest_file=$(kubectl exec -i "$pod" -c aggregator -n "$namespace" -- ls -1t /var/configs/db/etl/bingen/allocations/1d/ |head -n1 )
 
 if [ -n "$latest_file" ]; then
     echo "Latest file found: $latest_file"
