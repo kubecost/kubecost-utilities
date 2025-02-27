@@ -33,9 +33,9 @@ fi
 my_file="/var/configs/db/etl/bingen/allocations/1d/$latest_file"
 echo "my_file: $my_file"
 
-echo "Running: kubectl exec -i -t -n "$namespace" "$pod" -c aggregator -- /go/bin/app bingentojson "$my_file""
+echo "Running: kubectl exec -i -n "$namespace" "$pod" -c aggregator -- /go/bin/app bingentojson "$my_file""
 
-kubectl exec -i -t -n "$namespace" "$pod" -c aggregator -- /go/bin/app bingentojson "$my_file"
+kubectl exec -i -n "$namespace" "$pod" -c aggregator -- /go/bin/app bingentojson "$my_file"
 
 
 
