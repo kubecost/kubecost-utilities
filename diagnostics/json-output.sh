@@ -7,11 +7,11 @@
 # usage: ./json-output.sh [--namespace namespace] [--container container] [--data-type data_type] [--jq]
 # example: ./json-output.sh --namespace kc26 --container aggregator --jq --data-type allocations
 
-run_jq="false"
+json_output="false"
 while [[ $# -gt 0 ]]; do
   case $1 in
     --jq)
-      run_jq="true"
+      json_output="true"
       shift
       ;;
     --container)
@@ -74,7 +74,7 @@ my_output=$(kubectl exec --quiet -n "$namespace" "$pod" -c $container -- /go/bin
 # Remove all text before the first {
 my_json=$(echo "$my_output" | sed '0,/{/s/^[^{]*//')
 
-if [ "$run_jq" == "true" ]; then
+if [ "$json_output" == "true" ]; then
   echo "$my_json" 
 else
   echo "Namespace: $namespace"
@@ -82,11 +82,6 @@ else
   echo "Found pod running $container: $pod"
   echo "Latest file found: $latest_file"
   echo "my_file: $my_file"
-  echo "Running: kubectl exec --quiet -n "$namespace" "$pod" -c $container -- /go/bin/app bingentojson "$my_file""
+  echo "Running: kubectl exec --quiet -n \"$namespace\" \"$pod\" -c $container -- /go/bin/app bingentojson \"$my_file\""
   echo "$my_json"
 fi
-
-
-
-
-
