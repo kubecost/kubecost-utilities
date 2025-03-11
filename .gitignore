@@ -3,3 +3,4 @@
 kc-aggregator-tmp/
 .temp/
 .kubeconfig
+sampleData/
