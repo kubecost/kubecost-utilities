@@ -2,3 +2,5 @@
 .DS_Store
 kc-aggregator-tmp/
 .temp/
+.kubeconfig
+sampleData/
