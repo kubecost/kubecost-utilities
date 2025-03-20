@@ -50,7 +50,7 @@ if ! kubectl get namespace "$NAMESPACE" &>/dev/null; then
 fi
 
 # Find the aggregator pod
-POD_NAME=$(kubectl get pod -n "$NAMESPACE" -l app=aggregator -o jsonpath='{.items[0].metadata.name}')
+POD_NAME=$(kubectl get pods -n "$NAMESPACE" -o json | jq -r ".items[] | select(.spec.containers[].name == \"aggregator\") | .metadata.name")
 
 if [ -z "$POD_NAME" ]; then
     echo "No aggregator pod found in namespace $NAMESPACE"
