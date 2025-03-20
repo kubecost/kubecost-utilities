@@ -1,6 +1,7 @@
 # usage: python requestSizing-json-2-csv.py <csv to output> <http requestSizing query>
 # example: python requestSizing-json-2-csv.py requestSizing.csv "https://demo.kubecost.xyz/model/savings/requestSizingV2?algorithmCPU=max&algorithmRAM=max&filter=&targetCPUUtilization=0.65&targetRAMUtilization=0.65&window=3d&sortByOrder=descending&offset=0&limit=5"
 # For ease of use, use the kubecost UI to generate the requestSizing query with applicable filters and copy it from the browser inspect>network tab and find the requestSizingV2 query
+# This will be slow
 
 import json
 import csv
