@@ -4,3 +4,5 @@ kc-aggregator-tmp/
 .temp/
 .kubeconfig
 sampleData/
+*-trivy-results.txt
+*-scout-results.txt
