@@ -4,3 +4,11 @@ kc-aggregator-tmp/
 .temp/
 .kubeconfig
 sampleData/
+requestSizing.csv
+Pipfile.lock
+Pipfile
+*results.txt
+venv/
+gke_gcloud_auth_plugin_cache
+*.csv
+*.json
