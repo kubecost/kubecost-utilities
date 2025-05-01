@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # usage: python3 nodeGroup-json-2-csv.py <.json file or url>
 # when passing a url, the output is printed to stdout in csv format
 # when passing a file, a csv file is created in the current working directory with .csv appended to the filename

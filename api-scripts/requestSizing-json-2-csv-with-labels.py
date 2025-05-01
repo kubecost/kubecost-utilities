@@ -3,23 +3,15 @@
 # usage: python requestSizing-json-2-csv.py <csv to output> <http requestSizing query>
 # example: python requestSizing-json-2-csv.py requestSizing.csv "https://demo.kubecost.xyz/model/savings/requestSizingV2?algorithmCPU=max&algorithmRAM=max&filter=&targetCPUUtilization=0.65&targetRAMUtilization=0.65&window=3d&sortByOrder=descending&offset=0&limit=5"
 # To get the requestSizing query, use the kubecost UI to build the query with applicable filters and copy it from the browser inspect>network. It is the requestSizingV2 query
-# If SSO is enabled in kubecost, you can set the KUBECOST_API_KEY environment variable to your API key. This is only needed if querying the kubecost frontend.
-# Alternatively, if SSO is enabled: if you port-forward directly to the aggregator service, you can use the 9008 port that does not require authentication.
-# To use a port-forwarded aggregator service, run `kubectl port-forward svc/KUBECOST_RELEASE_NAME-aggregator -n KUBECOST_NAMESPACE 9008:9008`
-# When port-forwarding, the requestSizing query is available at http://localhost:9008/savings/requestSizingV2 (note that /model is not part of the path)
-# As of version 2.7, this request can take a long time to complete. As an example, and unfiltered 30 day window with 500,000 containers takes 1.5 hours. The Kubecost UI has a 3 minute timeout by default. A port-forwarded aggregator service does not have this timeout.
- 
+# This will be very slow
 
 import json
 import csv
 import sys
 import os
-import time
 
 import requests
 
-# export KUBECOST_API_KEY=YOURKEY
-# This is only needed if querying the kubecost frontend and SSO is enabled
 KUBECOST_API_KEY = os.environ.get('KUBECOST_API_KEY', None)
 
 if len(sys.argv) != 3:
@@ -29,10 +21,8 @@ if len(sys.argv) != 3:
 def flatten_data(json_data):
     flattened = []
     recommendations = json_data.get('Recommendations', [])
-    for i, rec in enumerate(recommendations, 1):
-        if i % 1000 == 0:
-            print(f"Processed {i} rows...")
-        
+    for rec in recommendations:
+        labels, namespace_labels = get_labels(rec.get('clusterID', ''), rec.get('namespace', ''), rec.get('controllerKind', ''), rec.get('controllerName', ''), rec.get('containerName', ''))
         row = {
             'clusterID': rec.get('clusterID', ''),
             'namespace': rec.get('namespace', ''),
@@ -56,32 +46,69 @@ def flatten_data(json_data):
             'monthlySavings_total': rec.get('monthlySavings', {}).get('total', ''),
             'currentEfficiency_cpu': rec.get('currentEfficiency', {}).get('cpu', ''),
             'currentEfficiency_memory': rec.get('currentEfficiency', {}).get('memory', ''),
-            'currentEfficiency_total': rec.get('currentEfficiency', {}).get('total', '')
+            'currentEfficiency_total': rec.get('currentEfficiency', {}).get('total', ''),
+            'labels': labels,
+            'namespaceLabels': namespace_labels
         }
         flattened.append(row)
     return flattened
 
+def get_labels(clusterID, namespace, controllerKind, controllerName, containerName):
+    baseUrl = sys.argv[2].split("/model/")[0]
+    allocationAPI = baseUrl + "/model/allocation"
+    query_params = (
+        "?window=3d"
+        "&aggregate=unaggregated"
+        "&idle=false"
+        "&accumulate=false"
+        "&filter="
+        f"cluster:\"{clusterID}\""
+        f"+namespace:\"{namespace}\""
+        f"+controllerKind:\"{controllerKind}\""
+        f"+controllerName:\"{controllerName}\""
+        f"+container:\"{containerName}\""
+    )
+    # This will take a while to run
+    print(f"Getting labels for {allocationAPI + query_params}")
+    headers = {"X-API-KEY": f"{KUBECOST_API_KEY}"} if KUBECOST_API_KEY else {}
+    response = requests.get(allocationAPI + query_params, headers=headers)
+    response.raise_for_status()
+    json_data = response.json()
+    
+    # Get the first item from data array (if it exists)
+    if json_data.get('data') and len(json_data['data']) > 0:
+        # Get the first key from the first item
+        first_key = next(iter(json_data['data'][0]))
+        labels = json_data['data'][0][first_key]['properties'].get('labels', {})
+        namespace_labels = json_data['data'][0][first_key]['properties'].get('namespaceLabels', {})
+        return json.dumps(labels, ensure_ascii=False), json.dumps(namespace_labels, ensure_ascii=False)
+    return '{}', '{}'
+
 
 def json_to_csv():
     if "http" in sys.argv[2].lower():
+        import requests
         print(sys.argv[2])
         try:
             print(f"Running query: {sys.argv[2]}")
             if KUBECOST_API_KEY is not None: print(f"Using API Key: {KUBECOST_API_KEY[:4]}{'*' * (len(KUBECOST_API_KEY) - 4)}")
-            start_time = time.time()
-            response = requests.get(sys.argv[2], headers={"X-API-KEY": f"{KUBECOST_API_KEY}"})
+            headers = {"X-API-KEY": f"{KUBECOST_API_KEY}"} if KUBECOST_API_KEY else {}
+            response = requests.get(sys.argv[2], headers=headers)
             response.raise_for_status()  # Raise an exception for bad status codes
             json_data = response.json()
         except requests.RequestException as e:
             print(f"Error fetching data from URL: {e}")
-            print(f"Request took {time.time() - start_time:.2f} seconds")
             return
-        print(f"Request took {time.time() - start_time:.2f} seconds")
     else:
         print(f"usage: python requestSizing-json-2-csv.py <csv to output> <http requestSizing query>")
         exit(1)
 
     flattened_data = flatten_data(json_data)
+
+    # with open(json_file, 'r') as f:
+    #     json_data = json.load(f)
+
+    # flattened_data = flatten_data(json_data)
 
     if flattened_data:
         keys = flattened_data[0].keys()
@@ -91,6 +118,7 @@ def json_to_csv():
             writer = csv.DictWriter(csv_output, fieldnames=keys)
             writer.writeheader()
             writer.writerows(flattened_data)
+            print(csv_output.getvalue())
 
             with open(sys.argv[1], 'w', newline='') as f:
                 writer = csv.DictWriter(f, fieldnames=keys)
