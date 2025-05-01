@@ -7,7 +7,7 @@
 # Alternatively, if SSO is enabled: if you port-forward directly to the aggregator service, you can use the 9008 port that does not require authentication.
 # To use a port-forwarded aggregator service, run `kubectl port-forward svc/KUBECOST_RELEASE_NAME-aggregator -n KUBECOST_NAMESPACE 9008:9008`
 # When port-forwarding, the requestSizing query is available at http://localhost:9008/savings/requestSizingV2 (note that /model is not part of the path)
-# As of version 2.7, this request can take a long time to complete. As an example, and unfiltered 30 day window with 500,000 containers takes 1.5 hours. The Kubecost UI has a 3 minute timeout by default. A port-forwarded aggregator service does not have this timeout.
+# As of version 2.7, this request can take a long time to complete. As an example, and unfiltered 30 day window with 500,000 containers takes 1.5 hours. The Kubecost UI has a 300 second timeout by default. A port-forwarded aggregator service does not have this timeout.
  
 
 import json
@@ -30,7 +30,7 @@ def flatten_data(json_data):
     flattened = []
     recommendations = json_data.get('Recommendations', [])
     for i, rec in enumerate(recommendations, 1):
-        if i % 1000 == 0:
+        if i % 10000 == 0:
             print(f"Processed {i} rows...")
         
         row = {
@@ -59,10 +59,12 @@ def flatten_data(json_data):
             'currentEfficiency_total': rec.get('currentEfficiency', {}).get('total', '')
         }
         flattened.append(row)
+    print(f"Processed {i} rows...")
     return flattened
 
 
 def json_to_csv():
+    query_processing_time = 0
     if "http" in sys.argv[2].lower():
         print(sys.argv[2])
         try:
@@ -72,13 +74,13 @@ def json_to_csv():
             response = requests.get(sys.argv[2], headers={"X-API-KEY": f"{KUBECOST_API_KEY}"})
             response.raise_for_status()  # Raise an exception for bad status codes
             json_data = response.json()
+            query_processing_time = time.time() - start_time
         except requests.RequestException as e:
             print(f"Error fetching data from URL: {e}")
             print(f"Request took {time.time() - start_time:.2f} seconds")
-            return
-        print(f"Request took {time.time() - start_time:.2f} seconds")
+            return None, query_processing_time
     else:
-        print(f"usage: python requestSizing-json-2-csv.py <csv to output> <http requestSizing query>")
+        print(f"usage: python requestSizing-json-2-csv.py <csv to output> <requestSizing query>, including http/https")
         exit(1)
 
     flattened_data = flatten_data(json_data)
@@ -101,6 +103,9 @@ def json_to_csv():
             print("Usage: python requestSizing-json-2-csv.py <csv to output> <http requestSizing query>")
     else:
         print("No data to write to CSV.")
+    
+    return flattened_data, query_processing_time
 
 # Usage
-json_to_csv()
+result, processing_time = json_to_csv()
+print(f"Query processing time: {processing_time:.2f} seconds")
