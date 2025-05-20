@@ -25,4 +25,17 @@ jobs:
           sudo apt-get install -y shellcheck make
 
       - name: Run shellcheck via Makefile
-        run: make shellcheck
+        run: |
+          make shellcheck > sc.log 
+          if [ -s sc.log ]; then
+            {
+              echo '### ShellCheck report'
+              echo ''
+              echo '```'
+              cat sc.log
+              echo '```'
+            } >>"$GITHUB_STEP_SUMMARY"
+          else
+            echo ':green_circle: No issues found' >>"$GITHUB_STEP_SUMMARY"
+          fi
+
