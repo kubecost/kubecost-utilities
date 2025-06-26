@@ -15,7 +15,7 @@ PROJECT_ID="guestbook-227502"
 # Name for the new service account
 SERVICE_ACCOUNT_NAME="kubecost-cloud-saas-sa"
 # The specific GCS bucket this service account will access
-BUCKET_NAME="unified-agent-test"
+BUCKET_NAME="KUBECOST_BUCKET_NAME"
 # The role to grant to the service account (using built-in role)
 ROLE_ID="roles/storage.objectAdmin"
 # The full email address of the service account
