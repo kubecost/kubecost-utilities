@@ -6,9 +6,8 @@ This directory contains scripts for setting up Kubecost with BigQuery billing da
 
 **IMPORTANT: Run scripts in this order:**
 
-1. [gcp/gcp-billing-project-setup.sh](gcp-kubecost-cluster-project-setup.sh) - Run this first
-2. [gcp-billing-project-setup.sh](gcp-kubecost-cluster-project-setup.sh) - Run this second
-3. [helmValues-gcp.yaml](helmValues-gcp.yaml) - Helm values for deploying Kubecost with the service account created in step 1
+1. **`gcp-kubecost-cluster-project-setup.shgcp/gcp-billing-project-setup.sh`** - Run this first
+2. **`gcp-billing-project-setup.sh`** - Run this second
 
 ## Script Details
 
