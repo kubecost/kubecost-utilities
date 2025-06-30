@@ -11,7 +11,7 @@ set -u
 
 # --- Configuration Variables ---
 # Automatically gets your current GCP project ID
-PROJECT_ID="guestbook-227502"
+PROJECT_ID="gcp-project-id"
 # Name for the new service account
 SERVICE_ACCOUNT_NAME="kubecost-cloud-saas-sa"
 # The specific GCS bucket this service account will access
