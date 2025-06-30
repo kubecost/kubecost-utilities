@@ -40,7 +40,7 @@ fi
 
 # --- 0. Make sure bucket exists by running simple ls command ---
 echo "Checking if bucket exists..."
-if ! gcloud storage ls "gs://${BUCKET_NAME}" --project="${PROJECT_ID}" > /dev/null 2>&1; then
+if ! gcloud storage ls "gs://${BUCKET_NAME}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
     echo "Bucket does not exist. Exiting."
     exit 1
 fi
@@ -98,4 +98,3 @@ echo "Consider moving it to a secure location (e.g., ~/.gcp/) and restricting it
 echo "Example usage with this key (after setting GOOGLE_APPLICATION_CREDENTIALS environment variable):"
 echo "export GOOGLE_APPLICATION_CREDENTIALS=\"$KEY_FILE_PATH\""
 echo "gcloud storage ls gs://$BUCKET_NAME"
-
