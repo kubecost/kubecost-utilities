@@ -1,0 +1,24 @@
+
+prometheus:
+  server:
+    global:
+      external_labels:
+        cluster_id: CLUSTER_NAME
+kubecostProductConfigs:
+  cloudIntegrationJSON: |-
+    {
+      "gcp": [
+        {
+          "projectID": "PROJECT_BILLING",
+          "billingDataDataset": "BIGQUERY_DATASET.BIGQUERY_TABLE"
+        }
+      ]
+    }
+  clusterName: CLUSTER_NAME
+  projectID: PROJECT_K8S_CLUSTER
+kubecostAggregator:
+  cloudCost:
+    serviceAccountName: K8S_SERVICE_ACCOUNT_CLOUD_COST
+  serviceAccountName: K8S_SERVICE_ACCOUNT_STORAGE
+serviceAccount:  # global setting to not create service accounts
+  create: false

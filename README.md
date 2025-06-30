@@ -2,6 +2,12 @@
 
 Various utilities for more easily administering/maintaining/supporting a Kubecost install.
 
+The scripts here are provided as-is. Please reach out via [support](https://www.ibm.com/mysupport/s/?language=en_US) if you have any questions.
+
+## GCP scripts
+
+See readme in [GCP directory](gcp).
+
 ## ETL-BACKUP
 
 Instructions to use the [ETL Backup Scripts](./etl-backup/README.md).
