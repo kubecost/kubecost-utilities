@@ -21,22 +21,7 @@ BIGQUERY_TABLE="BIGQUERY_TABLE_NAME"                              # or "*" for a
 # END Configuration
 
 # Make the script exit if any command fails
-set -e
-# Also exit if any command in a pipeline fails
-set -o pipefail
-# Exit if trying to use an unset variable
-set -u
-
-# Prompt to check if the script should create the Kubernetes resources
-echo "Do you want to create the Kubernetes resources?"
-echo "This script will create a Kubernetes Service Account and namespace if they don't exist."
-echo "If you choose not to create the Kubernetes resources, you can create them later."
-read -p "Enter your choice (y/n): " choice
-if [ "$choice" = "y" ]; then
-    CREATE_K8S_RESOURCES=true
-else
-    CREATE_K8S_RESOURCES=false
-fi
+set -euo pipefail
 
 echo "=== Kubernetes Service Account with BigQuery Access Setup ==="
 echo "K8s Cluster Project: $PROJECT_K8S_CLUSTER"
@@ -61,6 +46,16 @@ check_command gcloud
 echo "✓ Required tools are available"
 echo ""
 
+# Prompt to check if the script should create the Kubernetes resources
+echo "Do you want to create the Kubernetes resources?"
+echo "This script will create a Kubernetes Service Account and namespace if they don't exist."
+echo "If you choose not to create the Kubernetes resources, you can create them later."
+read -p "Enter your choice (y/n): " choice
+if [ "$choice" = "y" ]; then
+    CREATE_K8S_RESOURCES=true
+else
+    CREATE_K8S_RESOURCES=false
+fi
 # this is only used after confirming during a prompt above
 create_k8s_resources() {
     check_command kubectl
@@ -105,13 +100,13 @@ create_k8s_resources() {
 
     # Check if the cluster supports Workload Identity
     echo "Checking if the cluster supports Workload Identity..."
-    echo "kubectl get nodes --show-labels | grep gke-metadata-server"
+    echo "kubectl get nodes --show-labels | grep 'gke-metadata-server-enabled=true'"
     # Temporarily disable set -e to prevent failure on this command
-    set +e
-    kubectl get nodes --show-labels | grep -q gke-metadata-server
-    WORKLOAD_IDENTITY_CHECK=$?
-    # Re-enable set -e
-    set -e
+    WORKLOAD_IDENTITY_CHECK=1
+    if kubectl get nodes --show-labels | grep -q 'gke-metadata-server-enabled=true'; then
+        WORKLOAD_IDENTITY_CHECK=0 # Workload Identity enabled
+        echo "Workload Identity enabled"
+    fi
 
     if [ $WORKLOAD_IDENTITY_CHECK -eq 0 ]; then
         echo "✓ Cluster supports Workload Identity"
@@ -123,9 +118,9 @@ create_k8s_resources() {
         echo ""
         echo "And then enable it on the nodes:"
         echo "gcloud container node-pools list --cluster=$CLUSTER_NAME --zone=$CLUSTER_ZONE --project=$PROJECT_K8S_CLUSTER"
-        echo "gcloud container node-pools update POOL_NAME --cluster=$CLUSTER_NAME --zone=$CLUSTER_ZONE --project=$PROJECT_K8S_CLUSTER --workload-metadata=GKE_METADATA"
+        echo "gcloud container node-pools update --cluster=$CLUSTER_NAME --zone=$CLUSTER_ZONE --project=$PROJECT_K8S_CLUSTER --workload-metadata=GKE_METADATA POOL_NAME"
         echo ""
-        echo "After running the command above, run this script again."
+        echo "After running the commands above, run this script again."
         exit 1
     fi
     echo ""
