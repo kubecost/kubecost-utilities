@@ -19,6 +19,7 @@ kubecostProductConfigs:
 kubecostAggregator:
   cloudCost:
     serviceAccountName: K8S_SERVICE_ACCOUNT_CLOUD_COST
-  serviceAccountName: K8S_SERVICE_ACCOUNT_STORAGE
+  serviceAccountName: K8S_SERVICE_ACCOUNT_STORAGE # can be the same as the service account name for the cloud cost
 serviceAccount:  # global setting to not create service accounts
   create: false
+  name: K8S_SERVICE_ACCOUNT_CLOUD_COST # can be the same as the service account name for the cloud cost, cannot be null

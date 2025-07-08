@@ -21,11 +21,7 @@ BIGQUERY_TABLE="BIGQUERY_TABLE_NAME"                              # or "*" for a
 # END Configuration
 
 # Make the script exit if any command fails
-set -e
-# Also exit if any command in a pipeline fails
-set -o pipefail
-# Exit if trying to use an unset variable
-set -u
+set -euo pipefail
 
 echo "=== Kubernetes Service Account with BigQuery Access Setup ==="
 echo "Please review the configuration values:"
