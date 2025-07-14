@@ -11,8 +11,8 @@
 PROJECT_K8S_CLUSTER="GCP_PROJECT_ID_WHERE_KUBECOST_CLUSTER_IS_LOCATED"
 PROJECT_BILLING="GCP_PROJECT_ID_WHERE_BILLING_DATA_IS_LOCATED"    # Can be the same as the project where the Kubernetes cluster is located.
 K8S_NAMESPACE="kubecost"                                          # This is the namespace where the Kubernetes Service Account will be created.
-K8S_SERVICE_ACCOUNT_CLOUD_COST="kc-all-billing-bq-viewer2" # This is the name of the Kubernetes Service Account that will be used.
-GSA_NAME="kc-all-billing-bq-viewer2-gsa"                   # This is the name of the Google Service Account that will be created. Must be less than 31 characters.
+K8S_SERVICE_ACCOUNT_CLOUD_COST="kc-all-billing-bq-viewer" # This is the name of the Kubernetes Service Account that will be used.
+GSA_NAME="kc-all-billing-bq-viewer-gsa"                   # This is the name of the Google Service Account that will be created. Must be less than 31 characters.
 CLUSTER_NAME="KUBERNETES_CLUSTER_NAME"                            # This is the name of the Kubernetes cluster where Kubecost primary cluster is located.
 CLUSTER_ZONE="us-central1"                                      # This is the zone where the Kubernetes cluster is located.
 BIGQUERY_DATASET="BIGQUERY_DATASET_NAME"                          # This is the name of the BigQuery billing dataset.
