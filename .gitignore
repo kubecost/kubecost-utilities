@@ -8,6 +8,8 @@ requestSizing.csv
 Pipfile.lock
 Pipfile
 *results.txt
+*results.json
+*results.yaml
 venv/
 gke_gcloud_auth_plugin_cache
 *.csv

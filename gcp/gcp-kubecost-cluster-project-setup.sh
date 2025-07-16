@@ -11,8 +11,8 @@
 PROJECT_K8S_CLUSTER="GCP_PROJECT_ID_WHERE_KUBECOST_CLUSTER_IS_LOCATED"
 PROJECT_BILLING="GCP_PROJECT_ID_WHERE_BILLING_DATA_IS_LOCATED"    # Can be the same as the project where the Kubernetes cluster is located.
 K8S_NAMESPACE="kubecost"                                          # This is the namespace where the Kubernetes Service Account will be created.
-K8S_SERVICE_ACCOUNT_CLOUD_COST="kc-all-billing-bq-viewer2" # This is the name of the Kubernetes Service Account that will be used.
-GSA_NAME="kc-all-billing-bq-viewer2-gsa"                   # This is the name of the Google Service Account that will be created. Must be less than 31 characters.
+K8S_SERVICE_ACCOUNT_CLOUD_COST="kc-all-billing-bq-viewer" # This is the name of the Kubernetes Service Account that will be used.
+GSA_NAME="kc-all-billing-bq-viewer-gsa"                   # This is the name of the Google Service Account that will be created. Must be less than 31 characters.
 CLUSTER_NAME="KUBERNETES_CLUSTER_NAME"                            # This is the name of the Kubernetes cluster where Kubecost primary cluster is located.
 CLUSTER_ZONE="us-central1"                                      # This is the zone where the Kubernetes cluster is located.
 BIGQUERY_DATASET="BIGQUERY_DATASET_NAME"                          # This is the name of the BigQuery billing dataset.
@@ -20,23 +20,9 @@ BIGQUERY_TABLE="BIGQUERY_TABLE_NAME"                              # or "*" for a
 
 # END Configuration
 
-# Make the script exit if any command fails
-set -e
-# Also exit if any command in a pipeline fails
-set -o pipefail
-# Exit if trying to use an unset variable
-set -u
 
-# Prompt to check if the script should create the Kubernetes resources
-echo "Do you want to create the Kubernetes resources?"
-echo "This script will create a Kubernetes Service Account and namespace if they don't exist."
-echo "If you choose not to create the Kubernetes resources, you can create them later."
-read -p "Enter your choice (y/n): " choice
-if [ "$choice" = "y" ]; then
-    CREATE_K8S_RESOURCES=true
-else
-    CREATE_K8S_RESOURCES=false
-fi
+# Make the script exit if any command fails
+set -euo pipefail
 
 echo "=== Kubernetes Service Account with BigQuery Access Setup ==="
 echo "K8s Cluster Project: $PROJECT_K8S_CLUSTER"
@@ -61,6 +47,16 @@ check_command gcloud
 echo "✓ Required tools are available"
 echo ""
 
+# Prompt to check if the script should create the Kubernetes resources
+echo "Do you want to create the Kubernetes resources?"
+echo "This script will create a Kubernetes Service Account and namespace if they don't exist."
+echo "If you choose not to create the Kubernetes resources, you can create them later."
+read -p "Enter your choice (y/n): " choice
+if [ "$choice" = "y" ]; then
+    CREATE_K8S_RESOURCES=true
+else
+    CREATE_K8S_RESOURCES=false
+fi
 # this is only used after confirming during a prompt above
 create_k8s_resources() {
     check_command kubectl
@@ -105,13 +101,13 @@ create_k8s_resources() {
 
     # Check if the cluster supports Workload Identity
     echo "Checking if the cluster supports Workload Identity..."
-    echo "kubectl get nodes --show-labels | grep gke-metadata-server"
+    echo "kubectl get nodes --show-labels | grep 'gke-metadata-server-enabled=true'"
     # Temporarily disable set -e to prevent failure on this command
-    set +e
-    kubectl get nodes --show-labels | grep -q gke-metadata-server
-    WORKLOAD_IDENTITY_CHECK=$?
-    # Re-enable set -e
-    set -e
+    WORKLOAD_IDENTITY_CHECK=1
+    if kubectl get nodes --show-labels | grep -q 'gke-metadata-server-enabled=true'; then
+        WORKLOAD_IDENTITY_CHECK=0 # Workload Identity enabled
+        echo "Workload Identity enabled"
+    fi
 
     if [ $WORKLOAD_IDENTITY_CHECK -eq 0 ]; then
         echo "✓ Cluster supports Workload Identity"
@@ -123,9 +119,9 @@ create_k8s_resources() {
         echo ""
         echo "And then enable it on the nodes:"
         echo "gcloud container node-pools list --cluster=$CLUSTER_NAME --zone=$CLUSTER_ZONE --project=$PROJECT_K8S_CLUSTER"
-        echo "gcloud container node-pools update POOL_NAME --cluster=$CLUSTER_NAME --zone=$CLUSTER_ZONE --project=$PROJECT_K8S_CLUSTER --workload-metadata=GKE_METADATA"
+        echo "gcloud container node-pools update --cluster=$CLUSTER_NAME --zone=$CLUSTER_ZONE --project=$PROJECT_K8S_CLUSTER --workload-metadata=GKE_METADATA POOL_NAME"
         echo ""
-        echo "After running the command above, run this script again."
+        echo "After running the commands above, run this script again."
         exit 1
     fi
     echo ""
