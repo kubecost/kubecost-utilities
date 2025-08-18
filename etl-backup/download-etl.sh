@@ -50,6 +50,7 @@ kubectl debug -n "${namespace}"  "${podName}" \
   --container=ephemeral \
   --target=cost-model \
   --attach=false \
+  --profile=general \
   -- sh -c "sleep infinity" >/dev/null
 
 # Wait until the ephemeral container shows up in pod status
@@ -75,7 +76,7 @@ echo "ETL Archive Created: kubecost-etl.tar.gz"
 echo "Done"
 
 # Restart to remove the ephemeral container
-echo -n "Would you like to restart the Kubecost deployment to remove the ephemeral container [y/N]? "
+echo -n "Would you like to restart the Kubecost cost-model to remove the ephemeral container [y/N]? "
 read -r r
 
 if [[ "${r}" == "${r#[y]}" ]]; then
@@ -83,5 +84,5 @@ if [[ "${r}" == "${r#[y]}" ]]; then
   exit 0
 fi
 
-echo "Restarting the application"
-kubectl -n "${namespace}" rollout restart deployment/kubecost-cost-analyzer
+echo "Restarting ${podName} in ${namespace}"
+kubectl -n "${namespace}" delete pod "${podName}"

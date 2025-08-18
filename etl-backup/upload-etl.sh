@@ -45,9 +45,6 @@ fi
 # Grab the Pod Name of the cost-analyzer pod
 podName=$(kubectl get pods -n "${namespace}" -l app=cost-analyzer -o jsonpath='{.items[0].metadata.name}')
 
-# Grab the Deployment name of the cost-analyzer pod
-deployName=$(kubectl get deploy -n "${namespace}" -l app=cost-analyzer -o jsonpath='{.items[0].metadata.name}')
-
 # Create a kubectl debug container to use as an ephemeral passthrough
 # tar, used by kubectl cp, is no longer in Kubecost's base image 
 # we remove this ephemeral container by restarting the deployment at the end of the script
@@ -56,6 +53,7 @@ kubectl debug -n "${namespace}"  "${podName}" \
   --container=ephemeral \
   --target=cost-model \
   --attach=false \
+  --profile=general \
   -- sh -c "sleep infinity"
 
 # Wait until the ephemeral container shows up in pod status
@@ -80,5 +78,5 @@ kubectl exec -n "${namespace}" pod/"${podName}" --container=ephemeral -- sh -c "
   mv ${hostpath}/var/configs/kc-etl-tmp ${hostpath}/${etlDir}"
 
 # Restart the application to pull ETL data into memory
-echo "Restarting the application"
-kubectl -n "${namespace}" rollout restart deployment/"${deployName}"
+echo "Restarting ${podName} in ${namespace}"
+kubectl -n "${namespace}" delete pod "${podName}"
