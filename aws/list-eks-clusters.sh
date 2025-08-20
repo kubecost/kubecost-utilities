@@ -1,7 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script to list all EKS clusters across all AWS regions
+# ==============================================================================
+# List All EKS Clusters Across an AWS Account (All Regions)
+#
+# What this script does
+# - Confirms the caller’s AWS Account and ARN (via STS) and asks for consent.
+# - Iterates through AWS regions and runs `aws eks list-clusters` in each.
+# - Collects results in memory and prints a clean, deduplicated summary at the end.
+# - Shows a lightweight progress indicator (dots) while scanning regions.
+#
+# Usage
+#   ./list-eks-all-regions.sh
+#
+# Optional environment variables
+#   AWS_PROFILE=<profile>          Use a named profile instead of default creds.
+#   AWS_MAX_ATTEMPTS=2             (Already set in script) Reduce CLI retries.
+#   AWS_RETRY_MODE=standard        (Already set in script) Retry behavior.
+#   REGIONS="us-east-1 us-west-2"  (If you modify the loop) Limit to specific regions.
+#
+# Prerequisites
+# - AWS CLI v2 installed and on PATH.
+# - Valid AWS credentials (env vars, default profile, or AWS SSO/session) with:
+#     sts:GetCallerIdentity
+#     ec2:DescribeRegions
+#     eks:ListClusters
+# - Network access to regional EKS endpoints.
+# ==============================================================================
 export AWS_MAX_ATTEMPTS=2
 export AWS_RETRY_MODE=standard
 
@@ -20,7 +45,6 @@ fi
 
 echo "Fetching EKS clusters across all regions..."
 echo "------------------------------------------------"
-
 
 results=()
 
