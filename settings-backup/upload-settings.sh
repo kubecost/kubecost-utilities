@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eo pipefail
+
 if [[ -z "$2" ]]; then
   echo "Usage: $0 <namespace> <folder with settings to upload>"
   echo "Example: $0 kubecost ./kubecost-backup"
@@ -10,6 +12,7 @@ NAMESPACE=$1
 OUTPUT_DIR=$2
 
 kubecost_aggregator=$(kubectl get pod -n "${NAMESPACE}" -l app=aggregator -o jsonpath='{.items[0].metadata.name}')
+echo "Found aggregator pod: ${kubecost_aggregator}"
 
 for file in ${OUTPUT_DIR}/*; do
   if [[ -f "${file}" ]]; then
