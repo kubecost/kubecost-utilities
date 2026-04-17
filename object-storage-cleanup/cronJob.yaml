@@ -19,7 +19,7 @@ spec:
           # Use the same ServiceAccount as the Kubecost aggregator.
           # This ServiceAccount should already have the S3 permissions required
           # for Kubecost federated storage. See README-cronjob.md for details.
-          serviceAccountName: kc-ns-turndown-sa
+          serviceAccountName: kubecost-sa
           containers:
           - name: kubecost-object-store-cleaner
             image: public.ecr.aws/kubecost/awscli-util:0.0.1
@@ -32,17 +32,17 @@ spec:
             env:
             # S3 bucket configuration - UPDATE THESE VALUES
             - name: BUCKET
-              value: "qa-jesse2"
+              value: "YOUR_KUBECOST_BUCKET"
             # S3 key prefix to scope the search (e.g. "federated/").
             # Leave empty to search the entire bucket.
             - name: PREFIX
               value: ""
             # Delete files older than 7 days
             - name: DAYS_OLD
-              value: "6"
+              value: "7"
             # AWS region - UPDATE THIS VALUE
             - name: AWS_REGION
-              value: "us-east-1"
+              value: "YOUR_AWS_BUCKET_REGION"
             securityContext:
               readOnlyRootFilesystem: true
             volumeMounts:

@@ -50,7 +50,7 @@ calculate_cutoff_date() {
 
 # List S3 objects with /1h/ or /10m/ in their key path, older than cutoff.
 # Applies PREFIX to scope the listing when set.
-# Uses --no-paginate to retrieve all objects, not just the first 1000.
+# Auto-pagination is on by default in AWS CLI v2, so all objects are returned.
 list_objects() {
   local bucket="$1"
   local prefix="$2"
@@ -64,7 +64,6 @@ list_objects() {
 
   local aws_args=(
     --bucket "$bucket"
-    --no-paginate
     --output text
     --query "Contents[?LastModified < '${cutoff}' && (contains(Key, '/1h/') || contains(Key, '/10m/'))].[Key,LastModified,Size]"
   )
@@ -114,12 +113,14 @@ delete_files_from_csv() {
     batch_num=$((batch_num + 1))
     local batch_size=${#batch_keys[@]}
 
-    local payload
-    payload=$(printf '%s\n' "${batch_keys[@]}" | jq -Rn '
+    local payload_file
+    payload_file=$(mktemp /tmp/kubecost-delete-payload-XXXXXX.json)
+    printf '%s\n' "${batch_keys[@]}" | jq -Rn '
       {"Objects": [inputs | {"Key": .}], "Quiet": true}
-    ')
+    ' > "$payload_file"
 
-    aws s3api delete-objects --bucket "$BUCKET" --delete "$payload"
+    aws s3api delete-objects --bucket "$BUCKET" --delete "file://${payload_file}"
+    rm -f "$payload_file"
 
     total_deleted=$((total_deleted + batch_size))
     echo "  Progress: ${total_deleted} / ${file_count} deleted"
@@ -142,7 +143,9 @@ delete_files_from_csv() {
 
   echo ""
   echo "Deletion complete. ${total_deleted} object(s) deleted in ${batch_num} batch(es)."
-  [[ -n "$deleted_log" ]] && echo "Deletion log: ${deleted_log}"
+  if [[ -n "$deleted_log" ]]; then
+    echo "Deletion log: ${deleted_log}"
+  fi
 }
 
 process_csv_file() {
