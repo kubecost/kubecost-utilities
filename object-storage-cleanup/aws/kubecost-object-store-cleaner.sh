@@ -44,7 +44,7 @@ calculate_cutoff_date() {
     date -d "${DAYS_OLD} days ago" -u +"%Y-%m-%dT%H:%M:%S"
   else
     # BSD date (macOS)
-    date -u -v-${DAYS_OLD}d +"%Y-%m-%dT%H:%M:%S"
+    date -u -v-"${DAYS_OLD}"d +"%Y-%m-%dT%H:%M:%S"
   fi
 }
 
@@ -199,7 +199,7 @@ query_and_process() {
     if [[ "$SKIP_CONFIRM" == true ]]; then
       delete_files_from_csv "$tmp_file" "$file_count"
     else
-      read -p "Proceed with deletion of ${file_count} files? (yes/y to confirm): " confirm
+      read -r -p "Proceed with deletion of ${file_count} files? (yes/y to confirm): " confirm
       if [[ "$confirm" == "yes" || "$confirm" == "y" ]]; then
         delete_files_from_csv "$tmp_file" "$file_count"
       else

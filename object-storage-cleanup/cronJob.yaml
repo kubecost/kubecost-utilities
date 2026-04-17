@@ -22,7 +22,8 @@ spec:
           serviceAccountName: kubecost-sa
           containers:
           - name: kubecost-object-store-cleaner
-            image: public.ecr.aws/kubecost/awscli-util:0.0.1
+            # set your images below, or use: public.ecr.aws/kubecost/awscli-util:0.0.1
+            image: YOUR_REGISTRY/awscli-util:0.0.1
             command:
             - /bin/bash
             - -c
