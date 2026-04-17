@@ -169,7 +169,12 @@ process_csv_file() {
 
 query_and_process() {
   [[ -z "$BUCKET" ]] && { echo "Error: BUCKET environment variable is not set"; exit 1; }
-
+  # Validate bucket name doesn't contain : or /
+  if [[ "$BUCKET" =~ [:/] ]]; then
+    echo "Error: BUCKET name cannot contain ':' or '/' characters"
+    echo "Found: $BUCKET"
+    exit 1
+  fi
   local cutoff
   cutoff=$(calculate_cutoff_date)
 

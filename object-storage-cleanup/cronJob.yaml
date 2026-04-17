@@ -34,6 +34,7 @@ spec:
             env:
             # S3 bucket configuration - UPDATE THESE VALUES
             - name: BUCKET
+            # no s3:// prefix
               value: "YOUR_KUBECOST_BUCKET"
             # S3 key prefix to scope the search (e.g. "federated/").
             # Leave empty to search the entire bucket.

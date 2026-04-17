@@ -27,7 +27,7 @@ This [script](aws/kubecost-object-store-cleaner.sh) targets `/1h/` and `/10m/` f
 Set via environment variables:
 
 ```bash
-BUCKET="your-bucket-name"   # S3 bucket name (required)
+BUCKET="your-bucket-name"   # S3 bucket name (required), no s3:// prefix
 PREFIX=""                   # S3 key prefix to scope the search (e.g. "federated/")
 DAYS_OLD="7"                # Delete files older than N days
 OUTPUT_FILE="old_files.csv" # Output CSV filename
