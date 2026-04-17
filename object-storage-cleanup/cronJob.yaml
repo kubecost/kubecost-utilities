@@ -19,6 +19,7 @@ spec:
           # Use the same ServiceAccount as the Kubecost aggregator.
           # This ServiceAccount should already have the S3 permissions required
           # for Kubecost federated storage. See README-cronjob.md for details.
+          # Update this to match your Kubecost SA
           serviceAccountName: kubecost-sa
           containers:
           - name: kubecost-object-store-cleaner

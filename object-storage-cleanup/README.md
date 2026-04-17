@@ -1,5 +1,7 @@
 # Kubecost Object Store Cleaner
 
+> **Note:** This script currently supports AWS S3 only. Support for additional cloud providers (GCP, Azure) will be added in future releases.
+
 Kubecost stores files that represent a window of time. There are three different resolutions: 10m, 1h, 1d
 
 Only the 1d resolution files are required during a rebuild of the Aggregator pod — which would be needed if the Primary is moved to a new cluster or the PV was lost.

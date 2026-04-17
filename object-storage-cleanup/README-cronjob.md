@@ -1,5 +1,7 @@
 # Kubernetes CronJob Setup for Object Storage Cleanup
 
+> **Note:** This CronJob currently supports AWS S3 only. Support for additional cloud providers (GCP, Azure) will be added in future releases.
+
 This guide explains how to deploy the Kubecost object storage cleanup script as a Kubernetes CronJob that runs automatically on a schedule.
 
 ## Prerequisites
@@ -16,7 +18,7 @@ Create a ConfigMap containing the cleanup script in the same namespace as Kubeco
 
 ```bash
 kubectl create configmap kubecost-object-store-cleaner-script \
-  --from-file=./object-storage-cleanup/kubecost-object-store-cleaner.sh \
+  --from-file=kubecost-object-store-cleaner.sh=./object-storage-cleanup/aws/kubecost-object-store-cleaner.sh \
   --namespace kubecost
 ```
 
@@ -25,11 +27,12 @@ kubectl create configmap kubecost-object-store-cleaner-script \
 Edit the `cronJob.yaml` file and update the following values:
 
 1. **Namespace**: Ensure it matches your Kubecost installation (default: `kubecost`)
-2. **S3 Bucket**: Update the `BUCKET` environment variable with your bucket name
-3. **AWS Region**: Update the `AWS_REGION` environment variable
-4. **Schedule**: Adjust the cron schedule if needed (default: daily at 2 AM UTC)
-5. **Retention Period**: Modify `DAYS_OLD` to change how many days of data to keep (default: 7)
-6. **Search Patterns**: Adjust `SEARCH_PATTERNS` for specific resolutions (default: `1h,10m`)
+2. **ServiceAccount**: Update `serviceAccountName` to match your Kubecost installation (default: `kubecost-sa`)
+3. **Container Image**: Update the `image` field with your registry or use `public.ecr.aws/kubecost/awscli-util:0.0.1`
+4. **S3 Bucket**: Update the `BUCKET` environment variable with your bucket name
+5. **AWS Region**: Update the `AWS_REGION` environment variable
+6. **Schedule**: Adjust the cron schedule if needed (default: daily at 2 AM UTC)
+7. **Retention Period**: Modify `DAYS_OLD` to change how many days of data to keep (default: 7)
 
 ### Step 3: Deploy the CronJob
 
@@ -57,7 +60,7 @@ kubectl describe cronjob kubecost-object-store-cleaner -n kubecost
 
 ## ServiceAccount and Permissions
 
-The CronJob uses the same ServiceAccount as the Kubecost aggregator (`kubecost-cost-analyzer`). This is a best practice because:
+The CronJob uses the same ServiceAccount as the Kubecost aggregator. This is a best practice because:
 
 - The aggregator already has the necessary S3 permissions for the federated storage bucket
 - No additional IAM configuration is required
@@ -124,21 +127,6 @@ Modify the `DAYS_OLD` environment variable:
   value: "14" # Keep 14 days of data
 ```
 
-### Target Specific Resolutions
-
-Modify the `SEARCH_PATTERNS` environment variable to target specific resolution folders:
-
-```yaml
-- name: SEARCH_PATTERNS
-  value: "1h,10m,1m" # Clean up 1h, 10m, and 1m resolution data
-```
-
-Or set to empty to clean all files under the prefix:
-
-```yaml
-- name: SEARCH_PATTERNS
-  value: ""
-```
 
 ## Troubleshooting
 
@@ -147,13 +135,13 @@ Or set to empty to clean all files under the prefix:
 Verify the ServiceAccount has proper S3 permissions:
 
 ```bash
-kubectl describe serviceaccount kubecost-cost-analyzer -n kubecost
+kubectl describe serviceaccount kubecost-sa -n kubecost
 ```
 
 For AWS IRSA, check the IAM role annotation:
 
 ```bash
-kubectl get serviceaccount kubecost-cost-analyzer -n kubecost -o jsonpath='{.metadata.annotations.eks\.amazonaws\.com/role-arn}'
+kubectl get serviceaccount kubecost-sa -n kubecost -o jsonpath='{.metadata.annotations.eks\.amazonaws\.com/role-arn}'
 ```
 
 ### ConfigMap Not Found
@@ -178,7 +166,7 @@ kubectl delete configmap kubecost-object-store-cleaner-script -n kubecost
 
 # Create the new ConfigMap
 kubectl create configmap kubecost-object-store-cleaner-script \
-  --from-file=kubecost-object-store-cleaner.sh \
+  --from-file=kubecost-object-store-cleaner.sh=./object-storage-cleanup/aws/kubecost-object-store-cleaner.sh \
   --namespace kubecost
 ```
 
