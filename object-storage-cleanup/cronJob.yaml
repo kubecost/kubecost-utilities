@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kubecost-object-store-cleaner
+spec:
+  # Run daily at 2 AM UTC
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: kubecost-object-store-cleaner
+        spec:
+          restartPolicy: Never
+          # Use the same ServiceAccount as the Kubecost aggregator.
+          # This ServiceAccount should already have the S3 permissions required
+          # for Kubecost federated storage. See README-cronjob.md for details.
+          # Update this to match your Kubecost SA
+          serviceAccountName: kubecost-sa
+          containers:
+          - name: kubecost-object-store-cleaner
+            # set your images below, or use: public.ecr.aws/kubecost/awscli-util:0.0.1
+            image: YOUR_REGISTRY/awscli-util:0.0.1
+            command:
+            - /bin/bash
+            - -c
+            - |
+              # Run the cleanup script with auto-confirm
+              bash /script/kubecost-object-store-cleaner.sh --delete --confirm
+            env:
+            # S3 bucket configuration - UPDATE THESE VALUES
+            - name: BUCKET
+            # no s3:// prefix
+              value: "YOUR_KUBECOST_BUCKET"
+            # S3 key prefix to scope the search (e.g. "federated/").
+            # Leave empty to search the entire bucket.
+            - name: PREFIX
+              value: ""
+            # Delete files older than 7 days
+            - name: DAYS_OLD
+              value: "7"
+            # AWS region - UPDATE THIS VALUE
+            - name: AWS_REGION
+              value: "YOUR_AWS_BUCKET_REGION"
+            securityContext:
+              readOnlyRootFilesystem: true
+            volumeMounts:
+            - name: script
+              mountPath: /script
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "2000m"
+          volumes:
+          - name: script
+            configMap:
+              name: kubecost-object-store-cleaner-script
+          - name: tmp
+            emptyDir: {}

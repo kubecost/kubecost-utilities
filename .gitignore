@@ -14,3 +14,4 @@ venv/
 gke_gcloud_auth_plugin_cache
 *.csv
 *.json
+old_files.csv
