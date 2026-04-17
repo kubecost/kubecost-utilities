@@ -6,7 +6,7 @@ Kubecost stores files that represent a window of time. There are three different
 
 Only the 1d resolution files are required during a rebuild of the Aggregator pod — which would be needed if the Primary is moved to a new cluster or the PV was lost.
 
-The 10m and 1h files are not required for a rebuild, but they will be ingested up to the limit set in the helm values, which defaults to `retention1h: 49` (49 hours) and `retention10m: 36` (360 minutes).
+The 10m and 1h files are only ingested up to the limit set in the helm values, which defaults to retention1h: 49 (49 hours) and retention10m: 36 (360 minutes) meaning that any data in these folders older than 2 days is not required by Kubecost and can be deleted saving on storage costs.
 
 **The above defaults may change in the future.**
 
