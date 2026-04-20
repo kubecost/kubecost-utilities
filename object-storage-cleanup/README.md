@@ -27,7 +27,7 @@ This [script](aws/kubecost-object-store-cleaner.sh) targets `/1h/` and `/10m/` f
 Set via environment variables:
 
 ```bash
-BUCKET="your-bucket-name"   # S3 bucket name (required), no s3:// prefix
+BUCKET="YOUR_KUBECOST_BUCKET"   # S3 bucket name (required), no s3:// prefix
 PREFIX=""                   # S3 key prefix to scope the search (e.g. "federated/")
 DAYS_OLD="7"                # Delete files older than N days
 OUTPUT_FILE="old_files.csv" # Output CSV filename
@@ -38,7 +38,7 @@ OUTPUT_FILE="old_files.csv" # Output CSV filename
 Generate a CSV of /1h/ and /10m/ files older than 7 days:
 
 ```sh
-export BUCKET=kubecost-federated-s3-bucket
+export BUCKET=YOUR_KUBECOST_BUCKET
 ./object-storage-cleanup/aws/kubecost-object-store-cleaner.sh
 ```
 
@@ -57,7 +57,7 @@ Query and delete in one step (with interactive confirmation):
 Scope the search to a specific prefix and keep 30 days instead of 7:
 
 ```sh
-BUCKET=my-kubecost-bucket PREFIX="federated/" DAYS_OLD=30 \
+BUCKET=YOUR_KUBECOST_BUCKET PREFIX="federated/" DAYS_OLD=30 \
   ./object-storage-cleanup/aws/kubecost-object-store-cleaner.sh
 ```
 

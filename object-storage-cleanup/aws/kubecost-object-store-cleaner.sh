@@ -61,6 +61,7 @@ list_objects() {
   [[ -n "$prefix" ]] && location="s3://${bucket}/${prefix}"
 
   echo "Finding /1h/ and /10m/ files in ${location} older than ${DAYS_OLD} days (before ${cutoff})..."
+  echo "This can take hours if there are many files."
 
   local aws_args=(
     --bucket "$bucket"
