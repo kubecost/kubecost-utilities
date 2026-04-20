@@ -20,7 +20,8 @@ spec:
           # This ServiceAccount should already have the S3 permissions required
           # for Kubecost federated storage. See README-cronjob.md for details.
           # Update this to match your Kubecost SA
-          serviceAccountName: kubecost-sa
+          # Alternatively, you can use access keys and secrets
+          serviceAccountName: default
           containers:
           - name: kubecost-object-store-cleaner
             # set your images below, or use: public.ecr.aws/kubecost/awscli-util:0.0.1
@@ -36,6 +37,11 @@ spec:
             - name: BUCKET
             # no s3:// prefix
               value: "YOUR_KUBECOST_BUCKET"
+            ## USE pod identities when possible, otherwise you can set:
+            # - name: AWS_ACCESS_KEY_ID
+            #   value: "YOUR_ID"
+            # - name: AWS_SECRET_ACCESS_KEY
+            #   value: "YOUR_SECRET"
             # S3 key prefix to scope the search (e.g. "federated/").
             # Leave empty to search the entire bucket.
             - name: PREFIX
@@ -45,7 +51,7 @@ spec:
               value: "7"
             # AWS region - UPDATE THIS VALUE
             - name: AWS_REGION
-              value: "YOUR_AWS_BUCKET_REGION"
+              value: "us-west-2"
             securityContext:
               readOnlyRootFilesystem: true
             volumeMounts:

@@ -74,6 +74,8 @@ The CronJob uses the same ServiceAccount as the Kubecost aggregator. This is a b
 
 These permissions should already be configured if you're using Kubecost's federated storage feature.
 
+For a complete IAM policy template, see [aws/policy-iam-s3-cleanup.json](aws/policy-iam-s3-cleanup.json).
+
 ## Monitoring
 
 ### View Recent Job Runs
